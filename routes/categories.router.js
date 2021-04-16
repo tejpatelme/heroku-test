@@ -1,8 +1,9 @@
 const express = require("express");
+const { Category } = require("../schemas/category.schema");
 
 const categoriesRouter = express.Router();
 
-let id = 3;
+// let id = 3;
 
 let categories = [
   {
@@ -19,11 +20,26 @@ let categories = [
 
 categoriesRouter
   .route("/")
-  .get((req, res) => res.json(categories))
-  .post((req, res) => {
-    const product = req.body;
-    categories.push({ id: id++, ...product });
-    res.json({ success: true, product });
+  .get(async (req, res) => {
+    try {
+      const response = await Category.find({});
+      res.json({
+        success: true,
+        response,
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, errorMessage: error.message });
+    }
+  })
+  .post(async (req, res) => {
+    try {
+      const category = req.body;
+      const newCategory = new Category(category);
+      const response = await newCategory.save();
+      res.json({ success: true, response });
+    } catch (error) {
+      res.status(500).json({ success: false, errorMessage: error.message });
+    }
   });
 
 categoriesRouter
