@@ -1,49 +1,59 @@
 const express = require("express");
-
+const { Product } = require("../schemas/product.schema");
 const productsRouter = express.Router();
-
-let id = 3;
-
-let products = [
-  {
-    id: 1,
-    name: "japani joota",
-    price: 1500,
-  },
-
-  {
-    id: 2,
-    name: "reshmi rajai",
-    price: 3000,
-  },
-];
 
 productsRouter
   .route("/")
-  .get((req, res) => res.json(products))
-  .post((req, res) => {
-    const newProduct = req.body;
-    products.push({ id: id++, ...newProduct });
-    res.json({ success: true, newProduct });
+  .get(async (req, res) => {
+    try {
+      const products = await Product.find({});
+      res.json({ success: true, products });
+    } catch (error) {
+      res.status(500).json({ success: false, errorMessage: error.message });
+    }
+  })
+  .post(async (req, res) => {
+    try {
+      const product = req.body;
+      const newProduct = new Product(product);
+      const response = await newProduct.save();
+      res.json({ success: true, response });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        errorMessage: error.message,
+      });
+    }
   });
 
-productsRouter
-  .route("/:id")
-  .get((req, res) => {
-    const { id } = req.params;
-    const match = products.find((product) => product.id === parseInt(id));
-    res.json(match);
-  })
-  .post((req, res) => {
-    const { id } = req.params;
-    const updatedProduct = req.body;
-    products.forEach((product) => {
-      if (product.id === parseInt(id)) {
-        product.price = updatedProduct.price;
-      }
-    });
+productsRouter.param("productId", async (req, res, next, productId) => {
+  try {
+    const product = await Product.findById(productId);
+    if (product) {
+      req.product = product;
+      next();
+      return;
+    }
+    res.status(500).json({ success: false, errorMessage: "product not found" });
+  } catch (error) {
+    res.status(500).json({ success: false, errorMessage: error.message });
+  }
+});
 
-    res.json({ success: true, updatedProduct });
+productsRouter
+  .route("/:productId")
+  .get((req, res) => {
+    let { product } = req;
+    product.__v = undefined;
+    res.json({ success: true, product });
+  })
+  .delete(async (req, res) => {
+    try {
+      const product = await Product.deleteOne({ _id: req.product._id });
+      res.json({ success: true, product });
+    } catch (error) {
+      res.status(500).json({ success: false, errorMessage: error.message });
+    }
   });
 
 module.exports = { productsRouter };
