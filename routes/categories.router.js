@@ -1,22 +1,8 @@
 const express = require("express");
+const { extend } = require("lodash");
 const { Category } = require("../schemas/category.schema");
 
 const categoriesRouter = express.Router();
-
-// let id = 3;
-
-let categories = [
-  {
-    id: 1,
-    name: "electronics",
-    noOfProducts: 10,
-  },
-  {
-    id: 2,
-    name: "books",
-    noOfProducts: 50,
-  },
-];
 
 categoriesRouter
   .route("/")
@@ -42,24 +28,48 @@ categoriesRouter
     }
   });
 
+categoriesRouter.param("categoryId", async (req, res, next, categoryId) => {
+  try {
+    const category = await Category.findById(categoryId);
+    if (category) {
+      req.category = category;
+      next();
+      return;
+    }
+    res
+      .status(500)
+      .json({ success: false, errorMessage: "category not found" });
+  } catch (error) {
+    res.status(500).json({ success: false, errorMessage: error.message });
+  }
+});
+
 categoriesRouter
-  .route("/:id")
+  .route("/:categoryId")
   .get((req, res) => {
-    const { id } = req.params;
-    const match = categories.find((category) => category.id === parseInt(id));
-    res.json(match);
+    let { category } = req;
+    category.__v = undefined;
+    res.json({ success: true, category });
   })
-  .post((req, res) => {
-    const updatedProduct = req.body;
-    const { id } = req.params;
-
-    categories.forEach((category) => {
-      if (category.id === parseInt(id)) {
-        category.noOfProducts = updatedProduct.noOfProducts;
-      }
-    });
-
-    res.json({ success: true, updatedProduct });
+  .post(async (req, res) => {
+    try {
+      let categoryToUpdate = req.category;
+      const updatedCategory = req.body;
+      categoryToUpdate = _.extend(categoryToUpdate, updatedCategory);
+      categoryToUpdate = await categoryToUpdate.save();
+      res.json({ success: true, categoryToUpdate });
+    } catch (error) {
+      res.json({ success: false, categoryToUpdate });
+    }
+  })
+  .delete(async (req, res) => {
+    try {
+      const { category } = req;
+      const response = await category.remove();
+      res.json({ success: true, response });
+    } catch (error) {
+      res.status(500).json({ success: false, errorMessage: error.message });
+    }
   });
 
 module.exports = { categoriesRouter };
