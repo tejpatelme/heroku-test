@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
-require("mongoose-type-url");
 const { Schema, model } = mongoose;
+require("mongoose-type-url");
 
 const ProductSchema = new Schema(
   {
