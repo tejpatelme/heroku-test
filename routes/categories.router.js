@@ -38,7 +38,7 @@ categoriesRouter.param("categoryId", async (req, res, next, categoryId) => {
     }
     res
       .status(500)
-      .json({ success: false, errorMessage: "category not found" });
+      .json({ success: false, errorMessage: "category not found!" });
   } catch (error) {
     res.status(500).json({ success: false, errorMessage: error.message });
   }
