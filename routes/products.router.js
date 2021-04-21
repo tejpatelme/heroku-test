@@ -1,6 +1,14 @@
 const express = require("express");
 const { Product } = require("../schemas/product.schema");
 const productsRouter = express.Router();
+const faker = require("faker");
+
+faker.seed(124);
+
+const fakeProducts = [...Array(20)].map((item) => ({
+  name: faker.commerce.productName(),
+  price: faker.commerce.price(),
+}));
 
 productsRouter
   .route("/")
@@ -25,6 +33,18 @@ productsRouter
       });
     }
   });
+
+productsRouter.route("/seed").get(async (req, res) => {
+  try {
+    const products = await Product.create(fakeProducts);
+    res.json({
+      success: true,
+      products,
+    });
+  } catch (error) {
+    res.json({ errorMessage: error.message });
+  }
+});
 
 productsRouter.param("productId", async (req, res, next, productId) => {
   try {
