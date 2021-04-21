@@ -1,5 +1,5 @@
 const express = require("express");
-const { extend } = require("lodash");
+const _ = require("lodash");
 const { Category } = require("../schemas/category.schema");
 
 const categoriesRouter = express.Router();
